@@ -1,0 +1,15 @@
+[build-system]
+requires = ["uv-build"]
+build-backend = "uv_build"
+
+[project]
+name = "writeme"
+version = "0.1.0"
+description = "Templating engine for README and other markdown files"
+requires-python = ">=3.12"
+authors = [{ name = "Baptiste Pestourie" }]
+readme = "README.md"
+dependencies = ["click"]
+
+[project.scripts]
+writeme = "writeme._cli:writeme"
