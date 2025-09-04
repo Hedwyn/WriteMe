@@ -9,7 +9,10 @@ description = "Templating engine for README and other markdown files"
 requires-python = ">=3.12"
 authors = [{ name = "Baptiste Pestourie" }]
 readme = "README.md"
-dependencies = ["click"]
+dependencies = ["click", "mistletoe"]
 
 [project.scripts]
 writeme = "writeme._cli:writeme"
+
+[tool.mypy]
+ignore_missing_imports = true
