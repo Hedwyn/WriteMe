@@ -13,6 +13,7 @@ from mistletoe.span_token import RawText
 from mistletoe.token import Token
 
 from ._commands import get_command_output
+from ._sourcecode import get_source_code
 
 type _RenderingFunction = Callable[..., str]
 
@@ -79,6 +80,14 @@ def show_help_menu(cmd: str) -> str:
     Small wrapper around show_command_output; queries the help menu
     """
     return get_command_output(cmd + " --help")
+
+
+@_MainNamespace.register
+def show_source_code(import_path: str) -> str:
+    """
+    Displays the source code on the object at `import_path`
+    """
+    return get_source_code(import_path)
 
 
 def evaluate_block(eval_code: str) -> str:
