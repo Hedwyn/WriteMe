@@ -34,7 +34,6 @@ def render(markdown_path: str, output: str | None) -> None:
     """
     markdown_content = Path(markdown_path).read_text()
     doc = render_template(markdown_content)
-
     with MarkdownRenderer() as renderer:
         if output is None:
             click.echo(renderer.render(doc))

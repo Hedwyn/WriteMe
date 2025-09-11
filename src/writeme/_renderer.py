@@ -128,6 +128,7 @@ def render_template(content: str) -> Document:
     list[str]
         A list of code blocks marked with "writeme".
     """
+
     doc = Document(content)
     if doc.children is None:
         return doc
@@ -143,7 +144,11 @@ def render_template(content: str) -> Document:
 
                 rendered = evaluate_block(child.content)
                 child.content = rendered
+                # Note: the `language` attribute of tokens
+                # is not actually used by misteloe during rendering,
+                # and `info_string` is used instead...
                 current_fence.language = "console"
+                current_fence.info_string = "console"
                 current_fence = None
             case _:
                 continue
