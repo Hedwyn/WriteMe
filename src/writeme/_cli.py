@@ -6,12 +6,23 @@ Command-line interface for WriteMe
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
 from mistletoe.markdown_renderer import MarkdownRenderer
 
 from ._renderer import render_template
+
+
+@dataclass
+class RenderingConfig:
+    """
+    Parameters that can be passed to the Markdown Renderer
+    """
+
+    max_line_length: int | None = None
+    normalize_whitespaces: bool = False
 
 
 @click.group()
@@ -28,13 +39,32 @@ def writeme() -> None:
     default=None,
     help="Path to the file to render to. If omitted, uses stdout",
 )
-def render(markdown_path: str, output: str | None) -> None:
+@click.option(
+    "-mxl",
+    "--max-line-length",
+    type=int,
+    default=None,
+    help="Maximum line length to apply when formatting Markdown",
+)
+@click.option(
+    "-norm", "--normalize-whitespaces", is_flag=True, help="Normalizes whitespaces"
+)
+def render(
+    *,
+    markdown_path: str,
+    output: str | None,
+    max_line_length: int | None,
+    normalize_whitespaces: bool,
+) -> None:
     """
     Shows all found `writeme` code blocks in the passed markdown file.
     """
     markdown_content = Path(markdown_path).read_text()
     doc = render_template(markdown_content)
-    with MarkdownRenderer() as renderer:
+    with MarkdownRenderer(
+        normalize_whitespace=normalize_whitespaces,
+        max_line_length=max_line_length,  # type: ignore
+    ) as renderer:
         if output is None:
             click.echo(renderer.render(doc))
             return
