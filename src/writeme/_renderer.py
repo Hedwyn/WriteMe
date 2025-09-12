@@ -83,11 +83,21 @@ def show_help_menu(cmd: str) -> str:
 
 
 @_MainNamespace.register
-def show_source_code(import_path: str) -> str:
+def show_source_code(import_path: str, declaration_only: bool = False) -> str:
     """
     Displays the source code on the object at `import_path`
+
+    Parameters
+    ----------
+    obj_import_path: str
+        Path to the object from which to display the source code,
+        as {import_path}:func_name.
+
+    decl_only: bool
+        Only shows the function (or class declaration), removes the body
+        (show ... (Ellipsis) instead)
     """
-    return get_source_code(import_path)
+    return get_source_code(import_path, decl_only=declaration_only)
 
 
 def evaluate_block(eval_code: str) -> str:
