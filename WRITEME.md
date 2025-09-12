@@ -16,24 +16,10 @@ To tackle this problem, `WriteMe` is designed as follows:
 
 ### Calling writeme from command-line
 
-theiris project is self-hosted, meaning that this README is generated using WriteMe. The template file used to generate this README is located at the root of this repo, in [WRITEME.md](WRITEME.md). You can render a WriteMe template using the `writeme render` command:
+This project is self-hosted, meaning that this README is generated using WriteMe. The template file used to generate this README is located at the root of this repo, in [WRITEME.md](WRITEME.md). You can render a WriteMe template using the `writeme render` command:
 
-```console
-Welcome to WriteMe !
-Usage: writeme render [OPTIONS] MARKDOWN_PATH
-
-  Renders a WriteMe template. Formats all found `writeme` code blocks in the
-  passed markdown file. Output is written the the file given by -o if passed,
-  and to stdout otherwise.
-
-Options:
-  -o, --output TEXT               Path to the file to render to. If omitted,
-                                  uses stdout
-  -mxl, --max-line-length INTEGER
-                                  Maximum line length to apply when formatting
-                                  Markdown
-  -norm, --normalize-whitespaces  Normalizes whitespaces
-  --help                          Show this message and exit.
+```writeme
+show_help_menu("writeme render")
 ```
 
 ### Actually writing the template file
@@ -41,41 +27,16 @@ Options:
 WriteMe generation macros should be wrapped in code fences, using the `writeme` as the language.  You can refer to WRITEME.md for examples.<br>
 The syntax within the code blocks is pure Python; the function called will be replaced by its output in the rendered file. Available functions are as follows:
 
-```console
-@_MainNamespace.register
-def show_source_code(import_path: str, declaration_only: bool=False) -> str:
-    """
-    Displays the source code on the object at `import_path`
-
-    Parameters
-    ----------
-    obj_import_path: str
-        Path to the object from which to display the source code,
-        as {import_path}:func_name.
-
-    decl_only: bool
-        Only shows the function (or class declaration), removes the body
-        (show ... (Ellipsis) instead)
-    """
-    ..
+```writeme
+show_source_code("writeme._renderer:show_source_code", declaration_only=True)
 ```
 
-```console
-@_MainNamespace.register
-def show_command_output(cmd: str) -> str:
-    """
-    Runs the comamnd and captures stdout
-    """
-    ..
+```writeme
+show_source_code("writeme._renderer:show_command_output", declaration_only=True)
 ```
 
-```console
-@_MainNamespace.register
-def show_help_menu(cmd: str) -> str:
-    """
-    Small wrapper around show_command_output; queries the help menu
-    """
-    ..
+```writeme
+show_source_code("writeme._renderer:show_help_menu", declaration_only=True)
 ```
 
 ## Status

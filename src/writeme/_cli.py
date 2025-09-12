@@ -57,7 +57,10 @@ def render(
     normalize_whitespaces: bool,
 ) -> None:
     """
-    Shows all found `writeme` code blocks in the passed markdown file.
+    Renders a WriteMe template.
+    Formats all found `writeme` code blocks in the passed markdown file.
+    Output is written the the file given by -o if passed,
+    and to stdout otherwise.
     """
     markdown_content = Path(markdown_path).read_text()
     doc = render_template(markdown_content)

@@ -69,7 +69,7 @@ _MainNamespace: Final[RendererNamespace] = RendererNamespace()
 @_MainNamespace.register
 def show_command_output(cmd: str) -> str:
     """
-    Runs the comamnd and returns stdout
+    Runs the comamnd and captures stdout
     """
     return get_command_output(cmd)
 
