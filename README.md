@@ -52,7 +52,7 @@ def show_source_code(import_path: str, declaration_only: bool=False, language: s
 @_MainNamespace.register
 def show_command_output(cmd: str) -> RenderingInfo:
     """
-    Runs the comamnd and captures stdout
+    Runs the command and captures stdout
     """
     ..
 ```

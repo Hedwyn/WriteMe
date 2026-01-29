@@ -5,8 +5,8 @@ final auto-generated README
 
 from __future__ import annotations
 
-from typing import Callable, Final, Iterator, TypeVar
 from dataclasses import dataclass, field
+from typing import Callable, Final, Iterator, TypeVar
 
 from mistletoe.block_token import CodeFence, Document
 from mistletoe.span_token import RawText
@@ -17,9 +17,14 @@ from ._sourcecode import get_source_code
 
 type _RenderingFunction = Callable[..., RenderingInfo]
 
-type RenderingNamespace = dict[str, _RenderingFunction]
+type RenderingNamespace = dict[str, object]
 
 T = TypeVar("T", bound=_RenderingFunction)
+
+
+@dataclass
+class Inlined:
+    pass
 
 
 @dataclass
@@ -27,13 +32,13 @@ class CodeLike:
     language: str = "console"
 
 
-type RenderedOutputType = CodeLike
+type RenderedOutputType = CodeLike | Inlined
 
 
 @dataclass
 class RenderingInfo:
     content: str
-    type: RenderedOutputType = field(default_factory=CodeLike)
+    type: RenderedOutputType = field(default_factory=Inlined)
 
 
 class RendererNamespace:
@@ -46,7 +51,8 @@ class RendererNamespace:
         """
         Creates an emtpy namespace
         """
-        self._namespace: RenderingNamespace = {}
+        self._rendering_functions: dict[str, _RenderingFunction] = {}
+        self._global_vars: dict[str, object] = {}
 
     def register(self, func: T, overwrite_name: str | None = None) -> T:
         """
@@ -61,11 +67,14 @@ class RendererNamespace:
             ...
         """
         func_name = overwrite_name or func.__name__
-        if func_name in self._namespace:
+        if func_name in self._rendering_functions:
             raise ValueError(f"{func_name} already declared in namespace")
 
-        self._namespace[func_name] = func
+        self._rendering_functions[func_name] = func
         return func
+
+    def add_global_var(self, var_name: str, value: object) -> None:
+        self._global_vars[var_name] = value
 
     def export(self) -> RenderingNamespace:
         """
@@ -74,7 +83,7 @@ class RendererNamespace:
         RenderingNamespace
             A dict version of this object that can be injected in eval() or exec()
         """
-        return self._namespace.copy()
+        return {**self._global_vars, **self._rendering_functions}
 
 
 _MainNamespace: Final[RendererNamespace] = RendererNamespace()
@@ -85,7 +94,7 @@ def show_command_output(cmd: str) -> RenderingInfo:
     """
     Runs the command and captures stdout
     """
-    return RenderingInfo(get_command_output(cmd))
+    return RenderingInfo(get_command_output(cmd), type=CodeLike("console"))
 
 
 @_MainNamespace.register
@@ -93,7 +102,7 @@ def show_help_menu(cmd: str) -> RenderingInfo:
     """
     Small wrapper around show_command_output; queries the help menu
     """
-    return RenderingInfo(get_command_output(cmd + " --help"))
+    return RenderingInfo(get_command_output(cmd + " --help"), type=CodeLike("console"))
 
 
 @_MainNamespace.register
@@ -121,7 +130,9 @@ def show_source_code(
     )
 
 
-def evaluate_block(eval_code: str) -> RenderingInfo:
+def evaluate_block(
+    eval_code: str, namespace: RendererNamespace | None = None
+) -> RenderingInfo:
     """
     Calls eval() on the passed code `eval_code`.
     Injects the MainNamespace before running the evaluation.
@@ -131,6 +142,7 @@ def evaluate_block(eval_code: str) -> RenderingInfo:
     str
         The output of the called function
     """
+    namespace = namespace or _MainNamespace
     rendering_info = eval(eval_code, _MainNamespace.export())
     assert isinstance(rendering_info, RenderingInfo), (
         "Namespace function does not comply to expected signature"
@@ -149,7 +161,9 @@ def unwrap_tokens(root: Token) -> Iterator[Token]:
         yield from unwrap_tokens(child)
 
 
-def render_template(content: str) -> Document:
+def render_template(
+    content: str, namespace: RendererNamespace | None = None
+) -> Document:
     """Parse markdown and find writeme code blocks.
 
     Parameters
@@ -162,11 +176,12 @@ def render_template(content: str) -> Document:
     list[str]
         A list of code blocks marked with "writeme".
     """
-
+    namespace = namespace or _MainNamespace
     doc = Document(content)
     if doc.children is None:
         return doc
 
+    namespace.add_global_var("document", doc)
     current_fence: CodeFence | None = None
     for child in unwrap_tokens(doc):
         match child:
