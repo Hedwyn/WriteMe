@@ -6,20 +6,34 @@ final auto-generated README
 from __future__ import annotations
 
 from typing import Callable, Final, Iterator, TypeVar
+from dataclasses import dataclass, field
 
-from mistletoe import Document
-from mistletoe.block_token import CodeFence
+from mistletoe.block_token import CodeFence, Document
 from mistletoe.span_token import RawText
 from mistletoe.token import Token
 
 from ._commands import get_command_output
 from ._sourcecode import get_source_code
 
-type _RenderingFunction = Callable[..., str]
+type _RenderingFunction = Callable[..., RenderingInfo]
 
 type RenderingNamespace = dict[str, _RenderingFunction]
 
 T = TypeVar("T", bound=_RenderingFunction)
+
+
+@dataclass
+class CodeLike:
+    language: str = "console"
+
+
+type RenderedOutputType = CodeLike
+
+
+@dataclass
+class RenderingInfo:
+    content: str
+    type: RenderedOutputType = field(default_factory=CodeLike)
 
 
 class RendererNamespace:
@@ -67,23 +81,27 @@ _MainNamespace: Final[RendererNamespace] = RendererNamespace()
 
 
 @_MainNamespace.register
-def show_command_output(cmd: str) -> str:
+def show_command_output(cmd: str) -> RenderingInfo:
     """
-    Runs the comamnd and captures stdout
+    Runs the command and captures stdout
     """
-    return get_command_output(cmd)
+    return RenderingInfo(get_command_output(cmd))
 
 
 @_MainNamespace.register
-def show_help_menu(cmd: str) -> str:
+def show_help_menu(cmd: str) -> RenderingInfo:
     """
     Small wrapper around show_command_output; queries the help menu
     """
-    return get_command_output(cmd + " --help")
+    return RenderingInfo(get_command_output(cmd + " --help"))
 
 
 @_MainNamespace.register
-def show_source_code(import_path: str, declaration_only: bool = False) -> str:
+def show_source_code(
+    import_path: str,
+    declaration_only: bool = False,
+    language: str = "python",
+) -> RenderingInfo:
     """
     Displays the source code on the object at `import_path`
 
@@ -97,10 +115,13 @@ def show_source_code(import_path: str, declaration_only: bool = False) -> str:
         Only shows the function (or class declaration), removes the body
         (show ... (Ellipsis) instead)
     """
-    return get_source_code(import_path, decl_only=declaration_only)
+    return RenderingInfo(
+        get_source_code(import_path, decl_only=declaration_only),
+        type=CodeLike(language),
+    )
 
 
-def evaluate_block(eval_code: str) -> str:
+def evaluate_block(eval_code: str) -> RenderingInfo:
     """
     Calls eval() on the passed code `eval_code`.
     Injects the MainNamespace before running the evaluation.
@@ -110,8 +131,11 @@ def evaluate_block(eval_code: str) -> str:
     str
         The output of the called function
     """
-    result = eval(eval_code, _MainNamespace.export())
-    return str(result)
+    rendering_info = eval(eval_code, _MainNamespace.export())
+    assert isinstance(rendering_info, RenderingInfo), (
+        "Namespace function does not comply to expected signature"
+    )
+    return rendering_info
 
 
 def unwrap_tokens(root: Token) -> Iterator[Token]:
@@ -153,12 +177,14 @@ def render_template(content: str) -> Document:
                     continue
 
                 rendered = evaluate_block(child.content)
-                child.content = rendered
+                child.content = rendered.content
                 # Note: the `language` attribute of tokens
                 # is not actually used by misteloe during rendering,
                 # and `info_string` is used instead...
-                current_fence.language = "console"
-                current_fence.info_string = "console"
+                match rendered.type:
+                    case CodeLike(language):
+                        current_fence.language = language
+                        current_fence.info_string = language
                 current_fence = None
             case _:
                 continue

@@ -30,9 +30,9 @@ Options:
 ### Actually writing the template file
 WriteMe generation macros should be wrapped in code fences, using the `writeme` as the language.  You can refer to WRITEME.md for examples.<br>
 The syntax within the code blocks is pure Python; the function called will be replaced by its output in the rendered file. Available functions are as follows:
-```console
+```python
 @_MainNamespace.register
-def show_source_code(import_path: str, declaration_only: bool=False) -> str:
+def show_source_code(import_path: str, declaration_only: bool=False, language: str='python') -> RenderingInfo:
     """
     Displays the source code on the object at `import_path`
 
@@ -48,17 +48,17 @@ def show_source_code(import_path: str, declaration_only: bool=False) -> str:
     """
     ..
 ```
-```console
+```python
 @_MainNamespace.register
-def show_command_output(cmd: str) -> str:
+def show_command_output(cmd: str) -> RenderingInfo:
     """
     Runs the comamnd and captures stdout
     """
     ..
 ```
-```console
+```python
 @_MainNamespace.register
-def show_help_menu(cmd: str) -> str:
+def show_help_menu(cmd: str) -> RenderingInfo:
     """
     Small wrapper around show_command_output; queries the help menu
     """
